@@ -178,7 +178,7 @@ if __name__ == '__main__':
         if pid == 0: 
             for request in range(REQUESTS):
                 starttime=time.time()
-                client = HTTPClient(ADDRESS,PORT,PATH)
+                client = HTTPClient(DOMAIN,PORT,PATH)
                 try:
                     client.run()
                 except KeyboardInterrupt:
