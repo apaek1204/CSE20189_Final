@@ -8,10 +8,13 @@ import sys
 
 # Constants
 
-ADDRESS  = '127.0.0.1'
+ADDRESS  =  '127.0.0.1'
 PORT     = 9234
 PROGRAM  = os.path.basename(sys.argv[0])
 LOGLEVEL = logging.INFO
+REQUESTS = 1
+PROCESSES = 1
+
 
 # Utility Functions
 
@@ -22,6 +25,8 @@ Options:
 
     -h       Show this help message
     -v       Set logging to DEBUG level
+    -r REQUESTS     Number of requests per process (default is 1)
+    -p PROCESSES    Number of processes (default is 1)
 '''.format(port=PORT, program=PROGRAM)
     sys.exit(exit_code)
 
@@ -100,13 +105,19 @@ class EchoClient(TCPClient):
 if __name__ == '__main__':
     # Parse command-line arguments
     try:
-        options, arguments = getopt.getopt(sys.argv[1:], "hv")
+        options, arguments = getopt.getopt(sys.argv[1:], "hvr:p:")
     except getopt.GetoptError as e:
         usage(1)
 
     for option, value in options:
+        if option == '-h':
+            usage(0)
         if option == '-v':
             LOGLEVEL = logging.DEBUG
+        elif option == '-r':
+            REQUESTS = int(value)
+        elif option == '-p':
+            PROCESSES = int(value)
         else:
             usage(1)
 
