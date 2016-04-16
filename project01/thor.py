@@ -5,16 +5,19 @@ import logging
 import os
 import socket
 import sys
+import time
 
 # Constants
 
 ADDRESS  =  '127.0.0.1'
-PORT     = 9234
+DOMAIN = 'localhost'
+PATH = ''
+PORT     = 80
 PROGRAM  = os.path.basename(sys.argv[0])
 LOGLEVEL = logging.INFO
 REQUESTS = 1
 PROCESSES = 1
-
+URL = 'localhost'
 
 # Utility Functions
 
@@ -53,7 +56,7 @@ class TCPClient(object):
             # Connect to server with specified address and port, create file object
             self.socket.connect((self.address, self.port))
             self.stream = self.socket.makefile('w+')
-                   except socket.error as e:
+        except socket.error as e:
             self.logger.error('Could not connect to {}:{}: {}'.format(self.address, self.port, e))
             sys.exit(1)
 
@@ -81,41 +84,27 @@ class HTTPClient(TCPClient): #inherit from TCPClient
     def __init__(self, address, port, path):
         TCPClient.__init__(self, address, port)
         self.path = path
+        self.host = address
 
     def handle(self): #don't need to redefine run or finish
+        self.logger.debug('Handle')
+
         #Send request
-        self.stream.write('GET {} HTTP/1.0\r\n'.format(self.path) #must end HTTP with \r\n
+        self.logger.debug('Sending request...')
+        self.stream.write('GET {} HTTP/1.0\r\n'.format(self.path)) #must end HTTP with \r\n
         self.stream.write('Host: {}\r\n'.format(self.host))
         self.stream.write('\r\n') #to notify that the request is ending
-        
+
+        self.stream.flush()
+
         # Receive response
+        self.logger.debug('Receiving response...')
         data = self.stream.readline()
         while data:
             sys.stdout.write(data)
             data = self.stream.readline()
-# EchoClient Class
-'''
-class EchoClient(TCPClient):
-    def handle(self):
-       # Handle connection by reading data and then writing it back until EOF
-        self.logger.debug('Handle')
 
-        try:
-            data = sys.stdin.readline()
-            while data:
-                # Send STDIN to Server
-                self.stream.write(data)
-                self.stream.flush()
 
-                # Read from Server to STDOUT
-                data = self.stream.readline()
-                sys.stdout.write(data)
-
-                # Read from STDIN
-                data = sys.stdin.readline()
-        except socket.error:
-            pass    # Ignore socket errors
-'''
 # Main Execution
 
 if __name__ == '__main__':
@@ -138,7 +127,7 @@ if __name__ == '__main__':
             usage(1)
 
     if len(arguments) >= 1:
-        ADDRESS = arguments[0]
+        URL = arguments[0]
     if len(arguments) >= 2:
         PORT    = int(arguments[1])
 
@@ -149,19 +138,58 @@ if __name__ == '__main__':
         datefmt = '%Y-%m-%d %H:%M:%S',
     )
 
+    # Parse URL 
+    DOMAIN = URL.split('://')[-1] #gets rid of protocol part (http)
+   
+    if '/' not in DOMAIN:
+        PATH  = '/'
+ 
+    else:
+        PATH = '/' + DOMAIN.split('/',1)[-1]
+        if '?' in PATH:
+            PATH = PATH.split('?')[0]
+        DOMAIN = DOMAIN.split('/')[0]
+
+    if ':' in DOMAIN: 
+        PORT = int(DOMAIN.split(':')[-1])
+        DOMAIN = DOMAIN.split(':')[0]
+    
+    logging.debug('URL: {}'.format(URL))
+    logging.debug('HOST: {}'.format(DOMAIN))
+    logging.debug('PORT: {}'.format(PORT))
+    logging.debug('PATH: {}'.format(PATH))
+
     # Lookup host address
     try:
-        ADDRESS = socket.gethostbyname(ADDRESS)
+        ADDRESS = socket.gethostbyname(DOMAIN) # IP address number of DOMAIN
     except socket.gaierror as e:
         logging.error('Unable to lookup {}: {}'.format(ADDRESS, e))
         sys.exit(1)
 
     # Instantiate and run client
-    client = EchoClient(ADDRESS, PORT)
+    for process in range(PROCESSES):
+        try:
+            pid = os.fork()
+        except OSError as e:
+            error('Forking failed: {}'.format(e))
+        
+        #Child process
+        totaltime=0
+        if pid == 0: 
+            for request in range(REQUESTS):
+                starttime=time.time()
+                client = HTTPClient(ADDRESS,PORT,PATH)
+                try:
+                    client.run()
+                except KeyboardInterrupt:
+                    sys.exit(0)
+                endtime=time.time()
+                time = endtime - starttime
+                totaltime = time + totaltime
+                logging.debug('{} | Elapsed time: {} seconds'.format(os.getpid(), time))
+            logging.debug('{} | Average Elapsed time: {} seconds'.format(os.getpid(), time))
 
-    try:
-        client.run()
-    except KeyboardInterrupt:
-        sys.exit(0)
-
+        #Parent process
+        else: 
+            pid, status = os.wait()
 # vim: set sts=4 sw=4 ts=8 expandtab ft=python:
