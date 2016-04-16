@@ -53,7 +53,7 @@ class TCPClient(object):
             # Connect to server with specified address and port, create file object
             self.socket.connect((self.address, self.port))
             self.stream = self.socket.makefile('w+')
-        except socket.error as e:
+                   except socket.error as e:
             self.logger.error('Could not connect to {}:{}: {}'.format(self.address, self.port, e))
             sys.exit(1)
 
@@ -77,11 +77,27 @@ class TCPClient(object):
         finally:
             self.socket.close()
 
-# EchoClient Class
+class HTTPClient(TCPClient): #inherit from TCPClient
+    def __init__(self, address, port, path):
+        TCPClient.__init__(self, address, port)
+        self.path = path
 
+    def handle(self): #don't need to redefine run or finish
+        #Send request
+        self.stream.write('GET {} HTTP/1.0\r\n'.format(self.path) #must end HTTP with \r\n
+        self.stream.write('Host: {}\r\n'.format(self.host))
+        self.stream.write('\r\n') #to notify that the request is ending
+        
+        # Receive response
+        data = self.stream.readline()
+        while data:
+            sys.stdout.write(data)
+            data = self.stream.readline()
+# EchoClient Class
+'''
 class EchoClient(TCPClient):
     def handle(self):
-        ''' Handle connection by reading data and then writing it back until EOF '''
+       # Handle connection by reading data and then writing it back until EOF
         self.logger.debug('Handle')
 
         try:
@@ -99,7 +115,7 @@ class EchoClient(TCPClient):
                 data = sys.stdin.readline()
         except socket.error:
             pass    # Ignore socket errors
-
+'''
 # Main Execution
 
 if __name__ == '__main__':
