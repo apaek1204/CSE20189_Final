@@ -13,17 +13,21 @@ PORT     = 9234
 BACKLOG  = 0
 LOGLEVEL = logging.INFO
 PROGRAM  = os.path.basename(sys.argv[0])
+DOCROOT = '.'
+FORKING = False
 
 # Utility Functions
 
 def usage(exit_code=0):
-    print >>sys.stderr, '''Usage: {program} [-p PORT -v]
+    print >>sys.stderr, '''Usage: {program} [-d DOCROOT -p PORT -f -v] 
 
 Options:
 
     -h       Show this help message
+    -f       Enable forking mode
     -v       Set logging to DEBUG level
-    
+
+    -d DOCROOT Set root directory (default is current directorY)
     -p PORT  TCP Port to listen to (default is {port})
 '''.format(port=PORT, program=PROGRAM)
     sys.exit(exit_code)
@@ -82,6 +86,25 @@ class BaseHandler(object):
             pass    # Ignore socket errors
         finally:
             self.socket.close()
+
+
+
+#HTTPHandler
+
+class HTTPHandler(BaseHandler):
+    def handle(self): #need to overwrite handle
+
+        # read lines
+        data = self.stream.readline().rstrip()
+
+        #done when there is an empty line
+        while data:
+            sys.stdou.write(data)
+            data = self.stream.readline().rstrip()
+
+        self.stream.write('HTTP/1.0 200 OK\r\n')
+        self.stream.write('Content-Type: text/html\r\n')
+        self.stream.write('\r\n')
 
 # EchoHandler Class
 
@@ -145,13 +168,19 @@ class TCPServer(object):
 if __name__ == '__main__':
     # Parse command-line arguments
     try:
-        options, arguments = getopt.getopt(sys.argv[1:], "hp:v")
+        options, arguments = getopt.getopt(sys.argv[1:], "hp:d:fv")
     except getopt.GetoptError as e:
         usage(1)
 
     for option, value in options:
+        if option == '-h':
+            usage(0)
         if option == '-p':
             PORT = int(value)
+        elif option == '-d':
+            DOCROOT = value
+        elif option == 'f':
+            FORKING = True
         elif option == '-v':
             LOGLEVEL = logging.DEBUG
         else:
