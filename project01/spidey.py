@@ -353,20 +353,36 @@ class TCPServer(object):
             sys.exit(1)
 
         self.logger.info('Listening on {}:{}...'.format(self.address, self.port))
-
+        signal.signal(signal.SIGCHLD, signal.SIG_IGN)
         while True:
             # Accept incoming connection
             client, address = self.socket.accept()
             self.logger.debug('Accepted connection from {}:{}'.format(*address))
 
-            # Instantiate handler, handle connection, finish connection
-            try:
-                handler = self.handler(client, address)
-                handler.handle()
-            except Exception as e:
-                handler.exception('Exception: {}', e)
-            finally:
-                handler.finish()
+
+            if FORKING:
+                pid = os.fork()
+                if pid:
+                    client.close()
+                else:
+                    try:
+                        handler = self.handler(client, address)
+                        handler.handle()
+                    except Exception as e:
+                        handler.exception('Exception: {}', e)
+                    finally:
+                        handler.finish()
+                        os._exit(0)
+   
+            else:
+                # Instantiate handler, handle connection, finish connection
+                try:
+                    handler = self.handler(client, address)
+                    handler.handle()
+                except Exception as e:
+                    handler.exception('Exception: {}', e)
+                finally:
+                    handler.finish()
 
 # Main Execution
 
@@ -384,7 +400,7 @@ if __name__ == '__main__':
             PORT = int(value)
         elif option == '-d':
             DOCROOT = value
-        elif option == 'f':
+        elif option == '-f':
             FORKING = True
         elif option == '-v':
             LOGLEVEL = logging.DEBUG
