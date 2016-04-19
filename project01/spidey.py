@@ -6,6 +6,7 @@ import os
 import socket
 import sys
 import mimetypes
+import signal
 # Constants
 
 ADDRESS  = '0.0.0.0'
@@ -104,7 +105,10 @@ class HTTPHandler(BaseHandler):
             os.environ['REQUEST_METHOD'] = request[0]
             os.environ['REQUEST_URI'] = request[1]
             parse_request_uri = os.environ['REQUEST_URI'].split('/')
-            os.environ['QUERY_STRING'] = ''########INCOMPLETE 
+            temp = os.environ['REQUEST_URI'].split('?')
+            if len(temp) > 1:
+                os.environ['REQUEST_URI'] = temp[0]
+                os.environ['QUERY_STRING'] = temp[1]
             
             #done when there is an empty line
             while data:
@@ -155,31 +159,34 @@ class HTTPHandler(BaseHandler):
         else:
             return False
     def _handle_error(self, number):
-       self.stream.write('HTTP/1.0 200 OK\r\n')
-       self.stream.write('Content-Type: text/html\r\n')
-       self.stream.write('\r\n')
+        self.stream.write('HTTP/1.0 200 OK\r\n')
+        self.stream.write('Content-Type: text/html\r\n')
+        self.stream.write('\r\n')
 
-       self.stream.write('<!DOCTYPE html>')
-       self.stream.write('<html lang="en">')
-       self.stream.write('<head>')
-       self.stream.write('<title>{} Error</title>'.format(number))
-       self.stream.write('<link href="https://www3.nd.edu/~pbui/static/css/blugold.css" rel="stylesheet">')
-       self.stream.write('<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet">')
-       self.stream.write('</head>')
-       self.stream.write('<body>')
-       self.stream.write('<div class="container">')
-       self.stream.write('<div class="page-header">')
-       self.stream.write('<h2>{} Error</h2>'.format(number))
-       self.stream.write('</div>')
-       self.stream.write('<div class="thumbnail">')
-       self.stream.write('<img src="http://9buz.com/content/uploads/images/September2014/picard-seriously.jpg" class="img-responsive">')
-       self.stream.write('</div>')
-       self.stream.write('</div>')
-       self.stream.write('</body>')
-       self.stream.write('</html>')
-       self.stream.flush()
+        self.stream.write('<!DOCTYPE html>')
+        self.stream.write('<html lang="en">')
+        self.stream.write('<head>')
+        self.stream.write('<title>{} Error</title>'.format(number))
+        self.stream.write('<link href="https://www3.nd.edu/~pbui/static/css/blugold.css" rel="stylesheet">')
+        self.stream.write('<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet">')
+        self.stream.write('</head>')
+        self.stream.write('<body>')
+        self.stream.write('<div class="container">')
+        self.stream.write('<div class="page-header">')
+        self.stream.write('<h2>{} Error</h2>'.format(number))
+        self.stream.write('</div>')
+        self.stream.write('<div class="thumbnail">')
+        self.stream.write('<img src="http://9buz.com/content/uploads/images/September2014/picard-seriously.jpg" class="img-responsive">')
+        self.stream.write('</div>')
+        self.stream.write('</div>')
+        self.stream.write('</body>')
+        self.stream.write('</html>')
+        self.stream.flush()
     def _handle_script(self):
-        pass
+        signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+        for line in os.popen(self.uripath, 'r',1):
+            self.stream.write(line)
+        signal.signal(signal.SIGCHLD, signal.SIG_IGN)
     def _handle_file(self):
         # Determine the file's mimetype 
         mimetype, _ = mimetypes.guess_type(self.uripath)
