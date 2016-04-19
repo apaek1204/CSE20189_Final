@@ -146,17 +146,39 @@ class HTTPHandler(BaseHandler):
                 return False
         #if reaches end, return true
         return True
-
+    def exists(self,uripath):
+        #check if uripath exists
+        if os.path.isfile(uripath):
+            return True
+        elif os.path.isdir(uripath):
+            return True
+        else:
+            return False
     def _handle_error(self, number):
-        if number == 404:
-            pass 
-            # Display 404 error page
-        if number == 403: 
-            pass 
-            # Display 403 error page
+       self.stream.write('HTTP/1.0 200 OK\r\n')
+       self.stream.write('Content-Type: text/html\r\n')
+       self.stream.write('\r\n')
 
+       self.stream.write('<!DOCTYPE html>')
+       self.stream.write('<html lang="en">')
+       self.stream.write('<head>')
+       self.stream.write('<title>{} Error</title>'.format(number))
+       self.stream.write('<link href="https://www3.nd.edu/~pbui/static/css/blugold.css" rel="stylesheet">')
+       self.stream.write('<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet">')
+       self.stream.write('</head>')
+       self.stream.write('<body>')
+       self.stream.write('<div class="container">')
+       self.stream.write('<div class="page-header">')
+       self.stream.write('<h2>{} Error</h2>'.format(number))
+       self.stream.write('</div>')
+       self.stream.write('<div class="thumbnail">')
+       self.stream.write('<img src="http://9buz.com/content/uploads/images/September2014/picard-seriously.jpg" class="img-responsive">')
+       self.stream.write('</div>')
+       self.stream.write('</div>')
+       self.stream.write('</body>')
+       self.stream.write('</html>')
+       self.stream.flush()
     def _handle_script(self):
-        #NEED to do
         pass
     def _handle_file(self):
         # Determine the file's mimetype 
@@ -188,7 +210,8 @@ class HTTPHandler(BaseHandler):
             return -1
         elif os.path.isdir(self.uripath+'/'+y):
             return 1
-
+        else:
+            return 0
     def _handle_directory(self):
         self.dirList = sorted(os.listdir(self.uripath), cmp=self.cmpDir)
         # Write the http response status to socket
@@ -196,7 +219,42 @@ class HTTPHandler(BaseHandler):
         self.stream.write('Content-Type: text/html\r\n')
         self.stream.write('\r\n')
         #write html code 
-
+        self.stream.write('<!DOCTYPE html>')
+        self.stream.write('<html lang="en">')
+        self.stream.write('<title>{}</title>'.format(os.environ['REQUEST_URI']))
+        self.stream.write('<link href="https://www3.nd.edu/~pbui/static/css/blugold.css" rel="stylesheet">')
+        self.stream.write('<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet">')
+        self.stream.write('</head>')
+        self.stream.write('<body>')
+        self.stream.write('<div class="container">')
+        self.stream.write('<div class="page-header">')
+        self.stream.write('<h2>Directory Listing: {}</h2>'.format(os.environ['REQUEST_URI']))
+        self.stream.write('</div>')
+        self.stream.write('<table class="table table-striped">')
+        self.stream.write('<thead>')
+        self.stream.write('<th>Type</th>')
+        self.stream.write('<th>Name</th>')
+        self.stream.write('<th>Size</th>')
+        self.stream.write('</thead>')
+        self.stream.write('<tbody>')
+        for i in range(len(self.dirList)):
+            self.stream.write('<tr>')
+            if os.path.isdir(self.uripath + '/' + self.dirList[i]):
+                self.stream.write('<td><i class="Fa fa-folder-o"></i></td>')
+                self.stream.write('<td><a href="{}">{}</a></td>'.format(self.dirList[i],self.dirList[i]))
+                self.stream.write('<td>-</td>')
+            elif os.path.isfile(self.uripath + '/'+self.dirList[i]):
+                fileinfo = os.stat(self.uripath+ '/'+self.dirList[i])
+                self.stream.write('<td><i class="fa fa-file-o"></i></td>')
+                self.stream.write('<td><a href="{}">{}</a></td>'.format(self.dirList[i],self.dirList[i]))
+                self.stream.write('<td>{}</td>'.format(fileinfo.st_size))
+            self.stream.write('</tr>')
+        self.stream.write('</tbody>')
+        self.stream.write('</table>')
+        self.stream.write('</div>')
+        self.stream.write('</body>')
+        self.stream.write('<html>')
+        self.stream.flush()
 
     def handle(self): #need to overwrite handle from BasHandler
         self.debug('Handle')
@@ -208,7 +266,7 @@ class HTTPHandler(BaseHandler):
         self.uripath = os.path.normpath(self.docroot + os.environ['REQUEST_URI'])
         
        
-        if not self.uripath or not self.startDoc(self.uripath):
+        if not self.exists(self.uripath) or not self.startDoc(self.uripath):
             print 'error 404'
             self._handle_error(404) #404 error
             #Need to write func
