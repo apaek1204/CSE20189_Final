@@ -5,7 +5,7 @@ import logging
 import os
 import socket
 import sys
-
+import mimetypes
 # Constants
 
 ADDRESS  = '0.0.0.0'
@@ -13,7 +13,7 @@ PORT     = 9234
 BACKLOG  = 0
 LOGLEVEL = logging.INFO
 PROGRAM  = os.path.basename(sys.argv[0])
-DOCROOT = '.'
+DOCROOT = os.path.abspath('.')
 FORKING = False
 
 # Utility Functions
@@ -101,12 +101,14 @@ class HTTPHandler(BaseHandler):
             # read lines
             data = self.stream.readline().rstrip()
             request = data.split(' ')
-            REQUEST_METHOD = request[0]
-            REQUEST_URI = request[1]
-            parse_request_uri = REQUEST_URI.split('/')
-            QUERY_STRING = ''########INCOMPLETE 
+            os.environ['REQUEST_METHOD'] = request[0]
+            os.environ['REQUEST_URI'] = request[1]
+            parse_request_uri = os.environ['REQUEST_URI'].split('/')
+            os.environ['QUERY_STRING'] = ''########INCOMPLETE 
+            
             #done when there is an empty line
             while data:
+                
                 self.debug('Read {}', data)
                 #sys.stdout.write(data)
                 data = self.stream.readline().rstrip()
@@ -126,7 +128,8 @@ class HTTPHandler(BaseHandler):
                     os.environ['HTTP_ACCEPT_ENCODING']=temp[1]
                 elif temp[0] == 'Accept-Language':
                     os.environ['HTTP_ACCEPT_LANGUAGE']=temp[1]
-                
+            
+            
         except socket.error:
             pass #ignore socket errors
 
@@ -160,29 +163,39 @@ class HTTPHandler(BaseHandler):
         mimetype, _ = mimetypes.guess_type(self.uripath)
         if mimetype is None:
             mimetype = 'application/octet-stream'
-
         # Write the http response status to socket
-        
-
-            self.stream.write('{}\r\n'.format(response))
-            self.stream.write('Content-Type: {}\r\n'.format(mimetype))
-            self.stream.write('\r\n')
-            urifilef = open(self.urifile,'rb')
-            try:
+        self.stream.write('HTTP/1.0 200 OK\r\n')
+        self.stream.write('Content-Type: {}\r\n'.format(mimetype))
+        self.stream.write('\r\n')
+        urifilef = open(self.uripath,'rb')
+        try:
+            byte=urifilef.read(1)
+            while byte!= "":
+                self.stream.write(byte)
                 byte=urifilef.read(1)
-                while byte!= "":
-                    self.stream.write(byte)
-                    byte=f.read(1)
-            except:
-                pass
-            finally:
-                urifilef.close()
+        except:
+            pass
+        finally:
+            urifilef.close()
+            self.stream.flush()
+    
+    def cmpDir(self,x,y):
+        #compares x and y to see if x and/or y is a directory
+        #returns 0 if both are directory, -1 if x os directory, 1 if y is directory
+        if os.path.isdir(self.uripath+'/'+x) and os.path.isdir(self.uripath+'/'+y):
+            return 0
+        elif os.path.isdir(self.uripath+'/'+x):
+            return -1
+        elif os.path.isdir(self.uripath+'/'+y):
+            return 1
 
     def _handle_directory(self):
-        #write HTML code
-        pass
-    
-
+        self.dirList = sorted(os.listdir(self.uripath), cmp=self.cmpDir)
+        # Write the http response status to socket
+        self.stream.write('HTTP/1.0 200 OK\r\n')
+        self.stream.write('Content-Type: text/html\r\n')
+        self.stream.write('\r\n')
+        #write html code 
 
 
     def handle(self): #need to overwrite handle from BasHandler
@@ -193,24 +206,31 @@ class HTTPHandler(BaseHandler):
 
         #Build uripath by normalizing REQUEST_URI
         self.uripath = os.path.normpath(self.docroot + os.environ['REQUEST_URI'])
-
+        
+       
         if not self.uripath or not self.startDoc(self.uripath):
+            print 'error 404'
             self._handle_error(404) #404 error
             #Need to write func
         
         elif os.path.isfile(self.uripath) and os.access(self.uripath, os.X_OK):
+            print 'is script'
             self._handle_script() #CGI script 
             ##need to write func
 
         elif os.path.isfile(self.uripath) and os.access(self.uripath, os.R_OK):
+            print 'is file'
             self._handle_file() #Static file
             #need to write func
 
-        elif os.path.isdir(self.uripath) and os.acess(self.uripath, os.R_OK):
+        elif os.path.isdir(self.uripath) and os.access(self.uripath, os.R_OK):
+            print 'is dir'
             self._handle_directory() #Directory listing
             #need to write func
 
         else:
+            print self.uripath
+            print 'error 403'
             self._handle_error(403) #403 error
 
 # EchoHandler Class
