@@ -254,9 +254,15 @@ class HTTPHandler(BaseHandler):
         for i in range(len(self.dirList)):
             self.stream.write('<tr>')
             if os.path.isdir(self.uripath + '/' + self.dirList[i]): 
-                self.stream.write('<td><i class="Fa fa-folder-o"></i></td>')
+                self.stream.write('<td><i class="fa fa-folder-o"></i></td>')
                 self.stream.write('<td><a href="{}">{}</a></td>'.format(curDir+'/'+self.dirList[i],self.dirList[i]))
                 self.stream.write('<td>-</td>')
+            elif os.path.isfile(self.uripath + '/' + self.dirList[i]) and os.access(self.uripath+'/'+self.dirList[i], os.X_OK):
+                fileinfo = os.stat(self.uripath+'/'+self.dirList[i])
+                self.stream.write('<td><i class="fa fa-file-code-o"></i></td>')
+                self.stream.write('<td><a href="{}">{}</a></td>'.format(curDir+'/'+self.dirList[i],self.dirList[i]))
+                self.stream.write('<td>{}</td>'.format(fileinfo.st_size))
+
             elif os.path.isfile(self.uripath + '/'+self.dirList[i]):
                 fileinfo = os.stat(self.uripath+ '/'+self.dirList[i])
                 self.stream.write('<td><i class="fa fa-file-o"></i></td>')
