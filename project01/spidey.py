@@ -15,7 +15,7 @@ LOGLEVEL = logging.INFO
 PROGRAM  = os.path.basename(sys.argv[0])
 DOCROOT = os.path.abspath('.')
 FORKING = False
-
+curDir = ''
 # Utility Functions
 
 def usage(exit_code=0):
@@ -95,7 +95,7 @@ class HTTPHandler(BaseHandler):
     def __init__(self, fd, address, docroot = None):
         BaseHandler.__init__(self, fd, address)
         self.docroot = DOCROOT
-
+        print 'init'
     def _parse_request(self):
         try:
             # read lines
@@ -213,6 +213,9 @@ class HTTPHandler(BaseHandler):
         else:
             return 0
     def _handle_directory(self):
+        global curDir 
+        curDir =  os.environ['REQUEST_URI'].split('/')[-1]
+        
         self.dirList = sorted(os.listdir(self.uripath), cmp=self.cmpDir)
         # Write the http response status to socket
         self.stream.write('HTTP/1.0 200 OK\r\n')
@@ -239,14 +242,14 @@ class HTTPHandler(BaseHandler):
         self.stream.write('<tbody>')
         for i in range(len(self.dirList)):
             self.stream.write('<tr>')
-            if os.path.isdir(self.uripath + '/' + self.dirList[i]):
+            if os.path.isdir(self.uripath + '/' + self.dirList[i]): 
                 self.stream.write('<td><i class="Fa fa-folder-o"></i></td>')
-                self.stream.write('<td><a href="{}">{}</a></td>'.format(self.dirList[i],self.dirList[i]))
+                self.stream.write('<td><a href="{}">{}</a></td>'.format(curDir+'/'+self.dirList[i],self.dirList[i]))
                 self.stream.write('<td>-</td>')
             elif os.path.isfile(self.uripath + '/'+self.dirList[i]):
                 fileinfo = os.stat(self.uripath+ '/'+self.dirList[i])
                 self.stream.write('<td><i class="fa fa-file-o"></i></td>')
-                self.stream.write('<td><a href="{}">{}</a></td>'.format(self.dirList[i],self.dirList[i]))
+                self.stream.write('<td><a href="{}">{}</a></td>'.format(curDir+'/'+self.dirList[i],self.dirList[i]))
                 self.stream.write('<td>{}</td>'.format(fileinfo.st_size))
             self.stream.write('</tr>')
         self.stream.write('</tbody>')
