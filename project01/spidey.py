@@ -172,7 +172,12 @@ class HTTPHandler(BaseHandler):
        self.stream.write('<h2>{} Error</h2>'.format(number))
        self.stream.write('</div>')
        self.stream.write('<div class="thumbnail">')
-       self.stream.write('<img src="http://9buz.com/content/uploads/images/September2014/picard-seriously.jpg" class="img-responsive">')
+       self.stream.write('<img src="https://assets.entrepreneur.com/article/h1/3-ways-to-create-more-engaging-404-pages2.jpg" width = "495" height = "316.5" class="img-responsive">')
+       self.stream.write('<font size="26" face = "verdana"><b><center>DOH!</center></font></b>')
+       
+       #Youtube video "?autoplay=1" plays video automatically
+       self.stream.write('<center><iframe width="140" height="85" src="https://www.youtube.com/embed/OCmuATH2yzo?autoplay=1" frameborder="0" allowfullscreen></iframe></center>')
+       
        self.stream.write('</div>')
        self.stream.write('</div>')
        self.stream.write('</body>')
