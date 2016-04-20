@@ -276,10 +276,10 @@ class HTTPHandler(BaseHandler):
         self.stream.write('<html>')
         self.stream.flush()
 
-    def handle(self): #need to overwrite handle from BasHandler
+    def handle(self): # overwrite handle from BaseHandler
         self.debug('Handle')
         
-        #Pars HTTP request and headers
+        #Parse HTTP request and headers
         self._parse_request()
 
         #Build uripath by normalizing REQUEST_URI
@@ -289,22 +289,18 @@ class HTTPHandler(BaseHandler):
         if not self.exists(self.uripath) or not self.startDoc(self.uripath):
             print 'error 404'
             self._handle_error(404) #404 error
-            #Need to write func
         
         elif os.path.isfile(self.uripath) and os.access(self.uripath, os.X_OK):
             print 'is script'
             self._handle_script() #CGI script 
-            ##need to write func
 
         elif os.path.isfile(self.uripath) and os.access(self.uripath, os.R_OK):
             print 'is file'
             self._handle_file() #Static file
-            #need to write func
 
         elif os.path.isdir(self.uripath) and os.access(self.uripath, os.R_OK):
             print 'is dir'
             self._handle_directory() #Directory listing
-            #need to write func
 
         else:
             print self.uripath
