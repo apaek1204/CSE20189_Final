@@ -4,43 +4,28 @@
 
 # Latency: (def) How long does it take to do a request
 usage(){
-	echo "Usage: $0 -p PORT"
+	echo "Usage: $0 URL"
 }
 
-while getopts hp: argument; do
+while getopts h argument; do
 	case $argument in 
 		h) usage
+			exit
 			;;
-		p) PORT=$OPTARG
-			;;
+	#	p) PORT=$OPTARG
+	#		;;
 		*) usage
+			exit
 			;;
 	esac
 done
 
-# Use nmap to determine if port is open
-OPEN=$(nmap -Pn student00.cse.nd.edu | grep -o "$PORT")
+if [ -z $1 ]; then
+	usage
+else
+	URL=$1
+fi
 
 
-# Do 10 trials
-TOTAL=0
+./thor.py -r 10 -p 10 -v $URL 2>&1> /dev/null | grep "Average" | awk 'BEGIN{FS="|"} {print $2}' | awk 'BEGIN{FS=":"}{print $2}' | awk 'BEGIN{FS=" "}{sum += $1; n++}END{ if (n>0) print sum/n}'
 
-for trial in $(seq 10); do 
-	if [ ! -z $OPEN ]; then # PORT is open (not an empty string after curling)
-		echo "PORT $PORT is open"
-		./thor.py -v http://student00.cse.nd.edu:$PORT/ | egrep 'Elapsed time'
-
-
-	else # PORT is not open
-		echo "ERROR: PORT $PORT is not open"
-		time=0
-		exit
-	fi
-
-	echo "Trial $trial average time is $time seconds"
-	TOTAL=$(echo "$TOTAL+$time" | bc)
-done
-
-AVG_TOTAL=$(echo "$TOTAL/10" | bc)
-
-echo "The average time in a single connection for direcotry listings over 10 trials is $AVG_TOTAL"
