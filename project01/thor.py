@@ -175,6 +175,8 @@ if __name__ == '__main__':
         
         #Child process
         totaltime=0
+        starttime = 0
+        endtime = 0
         if pid == 0: 
             for request in range(REQUESTS):
                 starttime=time.time()
@@ -184,9 +186,9 @@ if __name__ == '__main__':
                 except KeyboardInterrupt:
                     sys.exit(0)
                 endtime=time.time()
-                time = endtime - starttime
-                totaltime = time + totaltime
-                logging.debug('{} | Elapsed time: {} seconds'.format(os.getpid(), time))
+                time_elapsed = endtime - starttime
+                totaltime = time_elapsed + totaltime
+                logging.debug('{} | Elapsed time: {} seconds'.format(os.getpid(), time_elapsed))
 
             logging.debug('{} | Average Elapsed time: {} seconds'.format(os.getpid(), totaltime/REQUESTS))
 
