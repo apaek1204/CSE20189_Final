@@ -187,7 +187,8 @@ if __name__ == '__main__':
                 time = endtime - starttime
                 totaltime = time + totaltime
                 logging.debug('{} | Elapsed time: {} seconds'.format(os.getpid(), time))
-            logging.debug('{} | Average Elapsed time: {} seconds'.format(os.getpid(), time))
+
+            logging.debug('{} | Average Elapsed time: {} seconds'.format(os.getpid(), totaltime/REQUESTS))
 
         #Parent process
         else: 
