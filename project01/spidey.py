@@ -293,7 +293,13 @@ class HTTPHandler(BaseHandler):
         #Build uripath by normalizing REQUEST_URI
         self.uripath = os.path.normpath(self.docroot + os.environ['REQUEST_URI'])
         
-       
+      
+        if not self.exists(self.uripath):
+            print "uripath {} does not exist".format(self.uripath)
+
+        if not self.startDoc(self.uripath):
+            print "uripath does not start with self.docroot"
+
         if not self.exists(self.uripath) or not self.startDoc(self.uripath):
             #print 'error 404'
             self.debug('Handle Error 404')
