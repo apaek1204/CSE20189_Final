@@ -73,7 +73,7 @@ class BaseHandler(object):
 
     def handle(self):
         ''' Handle connection '''
-        self.debug('Handle')
+        #self.debug('Handle')
         raise NotImplementedError
 
     def finish(self):
@@ -96,7 +96,8 @@ class HTTPHandler(BaseHandler):
     def __init__(self, fd, address, docroot = None):
         BaseHandler.__init__(self, fd, address)
         self.docroot = DOCROOT
-        print 'init'
+        #print 'init'
+
     def _parse_request(self):
         try:
             # read lines
@@ -110,10 +111,12 @@ class HTTPHandler(BaseHandler):
                 os.environ['REQUEST_URI'] = temp[0]
                 os.environ['QUERY_STRING'] = temp[1]
             
+            #self.debug('Parsing [{}, {}, {}]', REQUEST_METHOD, 
+            
             #done when there is an empty line
             while data:
                 
-                self.debug('Read {}', data)
+                #self.debug('Read {}', data)
                 #sys.stdout.write(data)
                 data = self.stream.readline().rstrip()
                 temp = data.split(':')
@@ -158,7 +161,9 @@ class HTTPHandler(BaseHandler):
             return True
         else:
             return False
+
     def _handle_error(self, number):
+        
         self.stream.write('HTTP/1.0 200 OK\r\n')
         self.stream.write('Content-Type: text/html\r\n')
         self.stream.write('\r\n')
@@ -186,11 +191,13 @@ class HTTPHandler(BaseHandler):
         self.stream.write('</body>')
         self.stream.write('</html>')
         self.stream.flush()
+
     def _handle_script(self):
         signal.signal(signal.SIGCHLD, signal.SIG_DFL)
         for line in os.popen(self.uripath, 'r',1):
             self.stream.write(line)
         signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+    
     def _handle_file(self):
         # Determine the file's mimetype 
         mimetype, _ = mimetypes.guess_type(self.uripath)
@@ -223,6 +230,7 @@ class HTTPHandler(BaseHandler):
             return 1
         else:
             return 0
+
     def _handle_directory(self):
         global curDir 
         curDir =  os.environ['REQUEST_URI'].split('/')[-1]
@@ -277,7 +285,7 @@ class HTTPHandler(BaseHandler):
         self.stream.flush()
 
     def handle(self): # overwrite handle from BaseHandler
-        self.debug('Handle')
+        #self.debug('Handle')
         
         #Parse HTTP request and headers
         self._parse_request()
@@ -287,24 +295,29 @@ class HTTPHandler(BaseHandler):
         
        
         if not self.exists(self.uripath) or not self.startDoc(self.uripath):
-            print 'error 404'
+            #print 'error 404'
+            self.debug('Handle Error 404')
             self._handle_error(404) #404 error
         
         elif os.path.isfile(self.uripath) and os.access(self.uripath, os.X_OK):
-            print 'is script'
+            #print 'is script'
+            self.debug('Handle Script')
             self._handle_script() #CGI script 
 
         elif os.path.isfile(self.uripath) and os.access(self.uripath, os.R_OK):
-            print 'is file'
+            #print 'is file'
+            self.debug('Handle file')
             self._handle_file() #Static file
 
         elif os.path.isdir(self.uripath) and os.access(self.uripath, os.R_OK):
-            print 'is dir'
+            #print 'is dir'
+            self.debug('Handle Directory')
             self._handle_directory() #Directory listing
 
         else:
-            print self.uripath
-            print 'error 403'
+            #print self.uripath
+            self.debug('Handle Error 403')
+            #print 'error 403'
             self._handle_error(403) #403 error
 
 # EchoHandler Class
@@ -359,8 +372,7 @@ class TCPServer(object):
             if FORKING:
                 pid = os.fork()
                 if pid:
-                    client.close()
-                else:
+                    #client.close()
                     try:
                         handler = self.handler(client, address)
                         handler.handle()
@@ -369,6 +381,18 @@ class TCPServer(object):
                     finally:
                         handler.finish()
                         os._exit(0)
+
+
+                else:
+                 #try:
+                     #   handler = self.handler(client, address)
+                    #    handler.handle()
+                    #except Exception as e:
+                    #    handler.exception('Exception: {}', e)
+                    #finally:
+                    #    handler.finish()
+                    #    os._exit(0)
+                    client.close()
    
             else:
                 # Instantiate handler, handle connection, finish connection
