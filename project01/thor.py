@@ -191,7 +191,7 @@ if __name__ == '__main__':
                 logging.debug('{} | Elapsed time: {} seconds'.format(os.getpid(), time_elapsed))
 
             logging.debug('{} | Average Elapsed time: {} seconds'.format(os.getpid(), totaltime/REQUESTS))
-
+            os._exit(0)
         #Parent process
         else: 
             pid, status = os.wait()
