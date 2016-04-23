@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
 	for candidate in itertools.product(ALPHABET, repeat=LENGTH): 
 		# itertools creates a tupple of each permutation of given ALPHABET
-		candidate = ''.join([random.choice(ALPHABET) for _ in range(LENGTH)])
+		candidate = ''.join(candidate)
 		CANDIDATE=PREFIX+candidate
 		checksum = md5sum(CANDIDATE)
 		
