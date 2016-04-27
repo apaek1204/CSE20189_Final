@@ -5,7 +5,7 @@ import work_queue
 import string
 import json
 import os
-
+import itertools
 #Constants
 
 SOURCES = ('hulk.py', 'hashes.txt')
@@ -46,8 +46,8 @@ if __name__ == '__main__':
 		queue.submit(task) 
 
 	#length 7
-	for prefix in itertools.product(ALPHABET,repeat=2):
-		command = './hulk.py -l 5 -p {}'.format(prefix) 
+	for prefix1, prefix2 in itertools.product(ALPHABET,repeat=2):
+		command = './hulk.py -l 5 -p {}'.format(prefix1+prefix2) 
 		task = work_queue.Task(command)
 
 		# Add source files (transfer files to workers)
@@ -57,8 +57,8 @@ if __name__ == '__main__':
 		queue.submit(task) 
 
 	# Checking passwords of length 8
-	for prefix in itertools.product(ALPHABET,repeat=3):
-		command = './hulk.py -l 5 -p {}'.format(prefix) 
+	for prefix1, prefix2, prefix3 in itertools.product(ALPHABET,repeat=3):
+		command = './hulk.py -l 5 -p {}'.format(prefix1+prefix2+prefix3) 
 		task = work_queue.Task(command)
 
 		# Add source files (transfer files to workers)
