@@ -7,6 +7,8 @@ import socket
 import sys
 import mimetypes
 import signal
+import imghdr
+
 # Constants
 
 ADDRESS  = '0.0.0.0'
@@ -265,6 +267,7 @@ class HTTPHandler(BaseHandler):
                 self.stream.write('<td><i class="fa fa-folder-o"></i></td>')
                 self.stream.write('<td><a href="{}">{}</a></td>'.format(curDir+'/'+self.dirList[i],self.dirList[i]))
                 self.stream.write('<td>-</td>')
+
             elif os.path.isfile(self.uripath + '/' + self.dirList[i]) and os.access(self.uripath+'/'+self.dirList[i], os.X_OK):
                 fileinfo = os.stat(self.uripath+'/'+self.dirList[i])
                 self.stream.write('<td><i class="fa fa-file-code-o"></i></td>')
@@ -274,6 +277,13 @@ class HTTPHandler(BaseHandler):
             elif os.path.isfile(self.uripath + '/'+self.dirList[i]):
                 fileinfo = os.stat(self.uripath+ '/'+self.dirList[i])
                 self.stream.write('<td><i class="fa fa-file-o"></i></td>')
+                
+                # Create a thumbnail image for image files
+                #if imghdr.what(curDir+'/'+self.dirList[i],self.dirList[i]) == 'png':
+                image=self.dirList[i].split('.')
+                if image[1] == "png" or image[1] == "ico" or image[1] == "jpg":
+                    self.stream.write('<a href="{}"><img src="{}" width="90" height="90"></a>'.format(curDir+'/'+self.dirList[i],self.dirList[i],curDir+'/'+self.dirList[i],self.dirList[i]))
+                
                 self.stream.write('<td><a href="{}">{}</a></td>'.format(curDir+'/'+self.dirList[i],self.dirList[i]))
                 self.stream.write('<td>{}</td>'.format(fileinfo.st_size))
             self.stream.write('</tr>')
