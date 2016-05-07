@@ -193,6 +193,8 @@ if __name__ == '__main__':
             logging.debug('{} | Average Elapsed time: {} seconds'.format(os.getpid(), totaltime/REQUESTS))
             os._exit(0)
         #Parent process
-        else: 
+    
+    for process in range(PROCESSES): # forks all children THEN waits
+        if (pid): 
             pid, status = os.wait()
 # vim: set sts=4 sw=4 ts=8 expandtab ft=python:
